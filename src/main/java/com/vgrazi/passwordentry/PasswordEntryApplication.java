@@ -27,6 +27,9 @@ public class PasswordEntryApplication implements NativeKeyListener {
   @Value("${pwd}")
   private String password;
 
+  @Value("${click-span}")
+  private long clickSpan;
+
   private final Robot robot;
 
   public PasswordEntryApplication() throws AWTException {
@@ -69,7 +72,7 @@ public class PasswordEntryApplication implements NativeKeyListener {
   public void nativeKeyPressed(NativeKeyEvent e) {
     if(e.getKeyCode()==NativeKeyEvent.VC_F8) {
       long current = System.currentTimeMillis();
-      if(current - last < 1000) {
+      if(current - last < clickSpan) {
         SwingUtilities.invokeLater(() -> {
           typePhrase(username);
           robot.keyPress(VK_TAB);
