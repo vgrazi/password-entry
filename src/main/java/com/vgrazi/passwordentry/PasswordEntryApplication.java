@@ -27,6 +27,9 @@ public class PasswordEntryApplication implements NativeKeyListener {
   @Value("${pwd}")
   private String password;
 
+  @Value("${pin}")
+  private String pin;
+
   @Value("${click-span}")
   private long clickSpan;
 
@@ -73,6 +76,8 @@ public class PasswordEntryApplication implements NativeKeyListener {
     if(e.getKeyCode()==NativeKeyEvent.VC_F8) {
       long current = System.currentTimeMillis();
       if(current - last < clickSpan) {
+//        clickSpan = current-last;
+        System.out.println("New click span:"+(current-last));
         SwingUtilities.invokeLater(() -> {
           typePhrase(username);
           robot.keyPress(VK_TAB);
@@ -80,6 +85,26 @@ public class PasswordEntryApplication implements NativeKeyListener {
 
         SwingUtilities.invokeLater(() -> {
           typePhrase(password);
+        });
+      }
+      last = current;
+    }
+    if(e.getKeyCode()==NativeKeyEvent.VC_F4) {
+      long current = System.currentTimeMillis();
+      if(current - last < clickSpan) {
+//        clickSpan = current-last;
+        System.out.println("New click span:"+(current-last));
+        SwingUtilities.invokeLater(() -> {
+          typePhrase("ams\\"+username);
+          robot.keyPress(VK_TAB);
+        });
+
+        SwingUtilities.invokeLater(() -> {
+          typePhrase(password);
+          robot.keyPress(VK_TAB);
+        });
+        SwingUtilities.invokeLater(() -> {
+          typePhrase(pin);
         });
       }
       last = current;
