@@ -15,8 +15,7 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.util.Map;
 
-import static java.awt.event.KeyEvent.VK_SHIFT;
-import static java.awt.event.KeyEvent.VK_TAB;
+import static java.awt.event.KeyEvent.*;
 
 @SpringBootApplication
 public class PasswordEntryApplication implements NativeKeyListener {
@@ -86,6 +85,9 @@ public class PasswordEntryApplication implements NativeKeyListener {
         SwingUtilities.invokeLater(() -> {
           typePhrase(password);
         });
+        SwingUtilities.invokeLater(() -> {
+          robot.keyPress(VK_END);
+        });
       }
       last = current;
     }
@@ -105,6 +107,9 @@ public class PasswordEntryApplication implements NativeKeyListener {
         });
         SwingUtilities.invokeLater(() -> {
           typePhrase(pin);
+        });
+        SwingUtilities.invokeLater(() -> {
+          robot.keyPress(VK_END);
         });
       }
       last = current;
