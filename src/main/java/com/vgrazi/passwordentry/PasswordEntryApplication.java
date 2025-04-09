@@ -82,12 +82,8 @@ public class PasswordEntryApplication implements NativeKeyListener {
           robot.keyPress(VK_TAB);
         });
 
-        SwingUtilities.invokeLater(() -> {
-          typePhrase(password);
-        });
-        SwingUtilities.invokeLater(() -> {
-          robot.keyPress(VK_END);
-        });
+        SwingUtilities.invokeLater(() -> typePhrase(password));
+        SwingUtilities.invokeLater(() -> robot.keyPress(VK_END));
       }
       last = current;
     }
@@ -105,12 +101,9 @@ public class PasswordEntryApplication implements NativeKeyListener {
           typePhrase(password);
           robot.keyPress(VK_TAB);
         });
-        SwingUtilities.invokeLater(() -> {
-          typePhrase(pin);
-        });
-        SwingUtilities.invokeLater(() -> {
-          robot.keyPress(VK_END);
-        });
+        SwingUtilities.invokeLater(() -> typePhrase(pin));
+        SwingUtilities.invokeLater(() -> robot.keyPress(VK_END));
+
       }
       last = current;
     }
@@ -142,9 +135,6 @@ public class PasswordEntryApplication implements NativeKeyListener {
       Integer keyEvent = asciiToKeyEvent.get(c);
       if(keyEvent==null) {
         keyEvent = KeyEvent.getExtendedKeyCodeForChar(c);
-
-//      String variableName = "VK_" + Character.toUpperCase(c);
-//      keyEvent = KeyEvent.class.getDeclaredField(variableName).getInt(null);
       }
       if(Character.isUpperCase(c)) {
         robot.keyPress(VK_SHIFT);
