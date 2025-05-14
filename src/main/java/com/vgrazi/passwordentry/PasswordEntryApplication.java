@@ -70,43 +70,53 @@ public class PasswordEntryApplication implements NativeKeyListener {
   }
 
   long last = 0;
+
   @Override
   public void nativeKeyPressed(NativeKeyEvent e) {
-    if(e.getKeyCode()==NativeKeyEvent.VC_F8) {
-      long current = System.currentTimeMillis();
-      if(current - last < clickSpan) {
-//        clickSpan = current-last;
-        System.out.println("New click span:"+(current-last));
-        SwingUtilities.invokeLater(() -> {
-          typePhrase(username);
-          robot.keyPress(VK_TAB);
-        });
-
-        SwingUtilities.invokeLater(() -> typePhrase(password));
-        SwingUtilities.invokeLater(() -> robot.keyPress(VK_END));
-      }
-      last = current;
+    switch (e.getKeyCode()) {
+      case NativeKeyEvent.VC_F4 -> handleKeyPress("ams\\" + username, VK_TAB, password, VK_TAB, pin, VK_END);
+      case NativeKeyEvent.VC_F8 -> handleKeyPress(username, VK_TAB, password, VK_END, null, -1);
+      case NativeKeyEvent.VC_F12 -> handleKeyPress(password, VK_TAB, null, -1, null, -1);
     }
-    if(e.getKeyCode()==NativeKeyEvent.VC_F4) {
-      long current = System.currentTimeMillis();
-      if(current - last < clickSpan) {
+  }
+
+  public void handleKeyPress(String first, int VK1, String second, int VK2, String third, int VK3) {
+    long current = System.currentTimeMillis();
+    if(current - last < clickSpan) {
 //        clickSpan = current-last;
-        System.out.println("New click span:"+(current-last));
-        SwingUtilities.invokeLater(() -> {
-          typePhrase("ams\\"+username);
-          robot.keyPress(VK_TAB);
-        });
+      System.out.println("New click span:" + (current - last));
 
-        SwingUtilities.invokeLater(() -> {
-          typePhrase(password);
-          robot.keyPress(VK_TAB);
-        });
-        SwingUtilities.invokeLater(() -> typePhrase(pin));
-        SwingUtilities.invokeLater(() -> robot.keyPress(VK_END));
-
-      }
-      last = current;
+      sleepAndTypePhrase(0, first);
+      if (VK1 >= 0) sleepAndPressKey(10, VK1);
+      if (second != null) sleepAndTypePhrase(50, second);
+      if (VK2 >= 0) sleepAndPressKey(10, VK2);
+      if (third != null) sleepAndTypePhrase(50, third);
+      if (VK3 >= 0) sleepAndPressKey(10, VK3);
     }
+    last = current;
+
+  }
+
+  private void sleepAndPressKey(long sleep, int VK1) {
+    SwingUtilities.invokeLater(() -> {
+      try {
+        Thread.sleep(sleep);
+      } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+      }
+      SwingUtilities.invokeLater(() -> robot.keyPress(VK1));
+    });
+  }
+
+  private void sleepAndTypePhrase(long sleep, String text) {
+    SwingUtilities.invokeLater(() -> {
+      try {
+        Thread.sleep(sleep);
+      } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+      }
+      typePhrase(text);
+    });
   }
 
   private void typePhrase(String pwd) {
