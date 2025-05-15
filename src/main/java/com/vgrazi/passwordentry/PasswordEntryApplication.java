@@ -88,10 +88,10 @@ public class PasswordEntryApplication implements NativeKeyListener {
 
       sleepAndTypePhrase(0, first);
       if (VK1 >= 0) sleepAndPressKey(10, VK1);
-      if (second != null) sleepAndTypePhrase(50, second);
-      if (VK2 >= 0) sleepAndPressKey(10, VK2);
-      if (third != null) sleepAndTypePhrase(50, third);
-      if (VK3 >= 0) sleepAndPressKey(10, VK3);
+      if (second != null) sleepAndTypePhrase(20, second);
+      if (VK2 >= 0) sleepAndPressKey(30, VK2);
+      if (third != null) sleepAndTypePhrase(40, third);
+      if (VK3 >= 0) sleepAndPressKey(50, VK3);
     }
     last = current;
 
@@ -101,10 +101,11 @@ public class PasswordEntryApplication implements NativeKeyListener {
     SwingUtilities.invokeLater(() -> {
       try {
         Thread.sleep(sleep);
+//        System.out.println("Pressing " + KeyEvent.getKeyText(VK1));
+        robot.keyPress(VK1);
       } catch (InterruptedException ex) {
         Thread.currentThread().interrupt();
       }
-      SwingUtilities.invokeLater(() -> robot.keyPress(VK1));
     });
   }
 
@@ -112,15 +113,16 @@ public class PasswordEntryApplication implements NativeKeyListener {
     SwingUtilities.invokeLater(() -> {
       try {
         Thread.sleep(sleep);
+        typePhrase(text);
       } catch (InterruptedException ex) {
         Thread.currentThread().interrupt();
       }
-      typePhrase(text);
     });
   }
 
-  private void typePhrase(String pwd) {
-    for(char c : pwd.toCharArray()) {
+  private void typePhrase(String text) {
+//    System.out.println("Typing " + text);
+    for(char c : text.toCharArray()) {
       try {
         typeIt(c);
 
@@ -131,28 +133,28 @@ public class PasswordEntryApplication implements NativeKeyListener {
   }
 
   private void typeIt(char c) throws IllegalAccessException, NoSuchFieldException {
-    if(c=='!') {
-      // Press and hold SHIFT
-      robot.keyPress(KeyEvent.VK_SHIFT);
+      if (c != '!') {
+        Integer keyEvent = asciiToKeyEvent.get(c);
+        if(keyEvent==null) {
+          keyEvent = KeyEvent.getExtendedKeyCodeForChar(c);
+        }
+        if(Character.isUpperCase(c)) {
+          robot.keyPress(VK_SHIFT);
+        }
+        robot.keyPress(keyEvent);
+        robot.keyRelease(keyEvent);
+        robot.keyRelease(VK_SHIFT);
+      } else {
+        // Press and hold SHIFT
+        robot.keyPress(KeyEvent.VK_SHIFT);
 
-      // Press the '1' key
-      robot.keyPress(KeyEvent.VK_1);
-      robot.keyRelease(KeyEvent.VK_1);
+        // Press the '1' key
+        robot.keyPress(KeyEvent.VK_1);
+        robot.keyRelease(KeyEvent.VK_1);
 
-      // Release SHIFT
-      robot.keyRelease(KeyEvent.VK_SHIFT);
-    } else {
-      Integer keyEvent = asciiToKeyEvent.get(c);
-      if(keyEvent==null) {
-        keyEvent = KeyEvent.getExtendedKeyCodeForChar(c);
+        // Release SHIFT
+        robot.keyRelease(KeyEvent.VK_SHIFT);
       }
-      if(Character.isUpperCase(c)) {
-        robot.keyPress(VK_SHIFT);
-      }
-      robot.keyPress(keyEvent);
-      robot.keyRelease(keyEvent);
-      robot.keyRelease(VK_SHIFT);
-    }
   }
 
   static Map<Character, Integer> asciiToKeyEvent = Map.of(
