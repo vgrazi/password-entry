@@ -14,6 +14,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import static java.awt.event.KeyEvent.*;
 
@@ -49,7 +50,7 @@ public class PasswordEntryApplication implements NativeKeyListener {
       // Register JNativeHook
       register();
       // Disable JNativeHook logging
-      java.util.logging.Logger logger = java.util.logging.Logger.getLogger(GlobalScreen.class.getPackage().getName());
+      Logger logger = java.util.logging.Logger.getLogger(GlobalScreen.class.getPackage().getName());
       logger.setLevel(java.util.logging.Level.OFF);
       logger.setUseParentHandlers(false);
     };
@@ -74,9 +75,10 @@ public class PasswordEntryApplication implements NativeKeyListener {
   @Override
   public void nativeKeyPressed(NativeKeyEvent e) {
     switch (e.getKeyCode()) {
+      case NativeKeyEvent.VC_F2 -> last = System.currentTimeMillis();
       case NativeKeyEvent.VC_F4 -> handleKeyPress("ams\\" + username, VK_TAB, password, VK_TAB, pin, VK_END);
       case NativeKeyEvent.VC_F8 -> handleKeyPress(username, VK_TAB, password, VK_END, null, -1);
-      case NativeKeyEvent.VC_F12 -> handleKeyPress(password, VK_TAB, null, -1, null, -1);
+      case NativeKeyEvent.VC_F11 -> handleKeyPress(password, VK_TAB, null, -1, null, -1);
     }
   }
 
@@ -93,7 +95,7 @@ public class PasswordEntryApplication implements NativeKeyListener {
       if (third != null) sleepAndTypePhrase(40, third);
       if (VK3 >= 0) sleepAndPressKey(50, VK3);
     }
-    last = current;
+//    last = current;
 
   }
 
