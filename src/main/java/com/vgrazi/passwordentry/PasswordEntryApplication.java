@@ -32,13 +32,13 @@ public class PasswordEntryApplication implements NativeKeyListener {
     static final boolean IS_MAC = OS_NAME.contains("mac") || OS_NAME.contains("darwin");
     static final boolean IS_WINDOWS = OS_NAME.contains("win");
 
-    @Value("${name}")
+    @Value("${password-entry.username}")
     private String username;
 
-    @Value("${pwd}")
+    @Value("${password-entry.password}")
     private String password;
 
-    @Value("${pin}")
+    @Value("${password-entry.pin}")
     private String pin;
 
     @Value("${click-span}")

@@ -65,7 +65,16 @@ class ClipboardWindow {
     }
 
     private void copy(String label, String value) {
-        clipboard.setContents(new StringSelection(value), null);
+        System.out.println("Copy button clicked: " + label + " (" + value.length() + " chars)");
+        try {
+            clipboard.setContents(new StringSelection(value), null);
+        } catch (Exception ex) {
+            System.err.println("Failed to set clipboard: " + ex);
+            ex.printStackTrace();
+            status.setText("Copy failed: " + ex.getMessage());
+            return;
+        }
+        System.out.println("Clipboard set");
         lastCopied = value;
         clearTimer.restart();
         String paste = PasswordEntryApplication.IS_MAC ? "⌘V" : "Ctrl+V";
