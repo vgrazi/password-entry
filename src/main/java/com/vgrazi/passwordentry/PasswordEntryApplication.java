@@ -44,6 +44,21 @@ public class PasswordEntryApplication implements NativeKeyListener {
     @Value("${click-span}")
     private long clickSpan;
 
+    /** keyboard = global hotkeys that type for you; clipboard = copy buttons; auto = clipboard on macOS, keyboard elsewhere */
+    @Value("${entry-mode:auto}")
+    private String entryMode;
+
+    @Value("${clipboard-clear-seconds:20}")
+    private int clipboardClearSeconds;
+
+    private boolean useClipboardMode() {
+        return switch (entryMode.trim().toLowerCase()) {
+            case "clipboard" -> true;
+            case "keyboard" -> false;
+            default -> IS_MAC;
+        };
+    }
+
     private final Robot robot;
 
     String city = "NYC (240G)";
@@ -141,10 +156,21 @@ public class PasswordEntryApplication implements NativeKeyListener {
             // Set up native library path for Spring Boot JAR
 //            setupNativeLibraryPath();
 
-            // Register JNativeHook
-            register();
-            createControlFrame();
-            
+            if (useClipboardMode()) {
+                // No global hook / Robot typing, so no OS permission prompts (e.g. macOS Accessibility)
+                System.out.println("Starting in clipboard mode");
+                java.util.LinkedHashMap<String, String> entries = new java.util.LinkedHashMap<>();
+                entries.put("ams\\" + username, "ams\\" + username);
+                entries.put("Username", username);
+                entries.put("Password", password);
+                entries.put("PIN", pin);
+                new ClipboardWindow(clipboardClearSeconds).show(entries);
+            } else {
+                // Register JNativeHook
+                register();
+                createControlFrame();
+            }
+
             // Keep the application running indefinitely
             synchronized (PasswordEntryApplication.this) {
                 try {
