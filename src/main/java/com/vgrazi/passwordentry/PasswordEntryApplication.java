@@ -26,6 +26,12 @@ public class PasswordEntryApplication implements NativeKeyListener {
 
     static final String EXTRACTED_NATIVE_LIB_PATH_PROPERTY = "passwordentry.jnativehook.lib.path";
 
+    // Must be declared before the static initializer below, which uses them
+    // (static fields and blocks are initialized in textual order).
+    static final String OS_NAME = System.getProperty("os.name").toLowerCase();
+    static final boolean IS_MAC = OS_NAME.contains("mac") || OS_NAME.contains("darwin");
+    static final boolean IS_WINDOWS = OS_NAME.contains("win");
+
     @Value("${name}")
     private String username;
 
@@ -60,34 +66,63 @@ public class PasswordEntryApplication implements NativeKeyListener {
         }
     }
 
+    /**
+     * Maps the JVM's os.arch to the folder names used inside the jnativehook jar.
+     */
+    private static String nativeArch() {
+        String arch = System.getProperty("os.arch").toLowerCase();
+        return switch (arch) {
+            case "amd64", "x86_64", "x86-64" -> "x86_64";
+            case "aarch64", "arm64" -> "arm64";
+            case "x86", "i386", "i486", "i586", "i686" -> "x86";
+            default -> arch.startsWith("arm") ? "arm" : arch;
+        };
+    }
+
     private static java.nio.file.Path extractNativeLibrary() throws java.io.IOException {
-        String osName = System.getProperty("os.name").toLowerCase();
+        String osFolder;
         String libName;
 
-        if (osName.contains("win")) {
+        if (IS_WINDOWS) {
+            osFolder = "windows";
             libName = "JNativeHook.dll";
-        } else if (osName.contains("mac")) {
+        } else if (IS_MAC) {
+            osFolder = "darwin";
             libName = "libJNativeHook.dylib";
         } else {
+            osFolder = "linux";
             libName = "libJNativeHook.so";
         }
 
-        java.nio.file.Path tempDir = java.nio.file.Files.createTempDirectory("jnativehook");
-        tempDir.toFile().deleteOnExit();
+        // Prefer the library bundled in the jnativehook jar for this exact OS/arch
+        // (covers both Intel and Apple Silicon Macs), then fall back to /native.
+        String[] candidates = {
+                "/com/github/kwhat/jnativehook/lib/" + osFolder + "/" + nativeArch() + "/" + libName,
+                "/native/" + libName
+        };
 
-        try (java.io.InputStream is = PasswordEntryApplication.class.getResourceAsStream("/native/" + libName)) {
-            if (is == null) {
-                return null;
+        for (String resource : candidates) {
+            try (java.io.InputStream is = PasswordEntryApplication.class.getResourceAsStream(resource)) {
+                if (is == null) {
+                    continue;
+                }
+                java.nio.file.Path tempDir = java.nio.file.Files.createTempDirectory("jnativehook");
+                tempDir.toFile().deleteOnExit();
+                java.nio.file.Path libPath = tempDir.resolve(libName);
+                java.nio.file.Files.copy(is, libPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                libPath.toFile().deleteOnExit();
+                System.out.println("Using native library resource: " + resource);
+                return libPath;
             }
-
-            java.nio.file.Path libPath = tempDir.resolve(libName);
-            java.nio.file.Files.copy(is, libPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-            libPath.toFile().deleteOnExit();
-            return libPath;
         }
+        return null;
     }
     public PasswordEntryApplication() throws AWTException {
         robot = new Robot();
+        if (IS_MAC) {
+            // macOS drops synthetic key events that arrive too quickly back-to-back
+            robot.setAutoDelay(10);
+        }
     }
 
     public static void main(String[] args) {
@@ -108,6 +143,7 @@ public class PasswordEntryApplication implements NativeKeyListener {
 
             // Register JNativeHook
             register();
+            createControlFrame();
             
             // Keep the application running indefinitely
             synchronized (PasswordEntryApplication.this) {
@@ -174,13 +210,38 @@ public class PasswordEntryApplication implements NativeKeyListener {
                 System.out.println("Native hook registered successfully");
             } catch (NativeHookException ex) {
                 System.err.println("Failed to register native hook: " + ex.getMessage());
+                if (IS_MAC) {
+                    System.err.println("On macOS, grant Accessibility (and Input Monitoring) permission to the app " +
+                            "running Java (Terminal, iTerm, IntelliJ, or the java binary) under " +
+                            "System Settings > Privacy & Security, then restart it.");
+                }
                 ex.printStackTrace();
                 throw new RuntimeException("Failed to register native hook: " + ex.getMessage(), ex);
             }
             registered = true;
         }
     }
+    private void createControlFrame() {
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Password Entry Control");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setSize(200, 100);
+            frame.setLocationRelativeTo(null);
 
+            JButton closeButton = new JButton("Close Application");
+            closeButton.addActionListener(e -> {
+                try {
+                    GlobalScreen.unregisterNativeHook();
+                } catch (NativeHookException ex) {
+                    System.err.println("Failed to unregister native hook: " + ex.getMessage());
+                }
+                System.exit(0);
+            });
+
+            frame.add(closeButton);
+            frame.setVisible(true);
+        });
+    }
     long last = 0;
 
     /**
@@ -254,6 +315,8 @@ public class PasswordEntryApplication implements NativeKeyListener {
                 Thread.sleep(sleep);
 //        System.out.println("Pressing " + KeyEvent.getKeyText(VK1));
                 robot.keyPress(VK1);
+                // Release the key; on macOS an unreleased key stays logically held down
+                robot.keyRelease(VK1);
             } catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
             }
